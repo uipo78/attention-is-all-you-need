@@ -10,24 +10,8 @@ else:
     FloatTensor = torch.FloatTensor
 
 
-class PositionWiseFFN(nn.Module):
-    """docstring for PositionWiseFFN."""
-    # TODO: figure out dimensions
-
-    def __init__(self):
-        super().__init__()
-
-        self.fc1 = nn.Sequential(
-            nn.Linear(),
-            nn.ReLU()
-        )
-        self.fc2 = nn.Linear()
-
-    def forward(self, x):
-        x = self.fc1(x)
-        x = self.fc2(x)
-
-        return x
+class PositionalEncoding(nn.Module):
+    pass
 
 
 class MultiHeadAttention(nn.Module):
@@ -38,8 +22,6 @@ class MultiHeadAttention(nn.Module):
 
         # See top of page 5
         d_k = d_v = d_model // h
-
-        self.layer_norm = layer_norm
 
         # Rather than constructing a set of W matrices for Q, K, and V,
         # we instead stack all such matrices, resulting in an order 3 tensor.
@@ -95,3 +77,37 @@ class _ScaledDotProductAttention(nn.Module):
             x = F.dropout(x, p=p)
 
         return x.matmul(V)
+
+
+class PositionWiseFFN(nn.Module):
+    """docstring for PositionWiseFFN."""
+    # TODO: figure out dimensions
+
+    def __init__(self):
+        super().__init__()
+        self.fc1 = nn.Sequential(
+            nn.Linear(),
+            nn.ReLU()
+        )
+        self.fc2 = nn.Linear()
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.fc2(x)
+
+        return x
+
+
+class LayerNorm(nn.Module):
+
+    def __init__(self, features, epsilon=1e-6):
+        super().__init__()
+        self.gamma = nn.Parameter(torch.ones(features))
+        self.beta = nn.Parameter(torch.zeros(features))
+        self.epsilon = epsilon
+
+    def forward(self, x):
+        mean = x.mean(-1, keepdim=True)
+        std = x.std(-1, keepdim=True)
+        
+        return self.gamma * (x - mean) / (std + self.epsilon) + self.beta
