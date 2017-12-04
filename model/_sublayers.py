@@ -99,15 +99,16 @@ class PositionWiseFFN(nn.Module):
 
 
 class LayerNorm(nn.Module):
+    """docstring for LayerNorm."""
 
-    def __init__(self, features, epsilon=1e-6):
+    def __init__(self, dim_hidden, epsilon=1e-6):
         super().__init__()
-        self.gamma = nn.Parameter(torch.ones(features))
-        self.beta = nn.Parameter(torch.zeros(features))
+        self.alpha = nn.Parameter(torch.ones(dim_hidden))
+        self.beta = nn.Parameter(torch.zeros(dim_hidden))
         self.epsilon = epsilon
 
     def forward(self, x):
         mean = x.mean(-1, keepdim=True)
         std = x.std(-1, keepdim=True)
-        
-        return self.gamma * (x - mean) / (std + self.epsilon) + self.beta
+
+        return self.alpha * (x - mean) / (std + self.epsilon) + self.beta
