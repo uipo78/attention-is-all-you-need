@@ -69,11 +69,13 @@ class _DecoderLayer(nn.Module):
         self.masked_multihead = MultiHeadAttention()
         self.multihead = MultiHeadAttention()
         self.pw_ffn = PositionWiseFFN()
+        self.norm_multihead = LayerNorm(dim_hidden=d_model)
+        self.norm = LayerNorm()
         self.norm = LayerNorm()
 
     def forward(self, x, x_encoder):
-        x = self.norm(x + self.masked_multihead(x))
-        x = self.norm(x + self.multhead(x, x_encoder))
+        x = self.norm_multihead(x + self.masked_multihead(x))
+        x = self.norm_multihead(x + self.multhead(x, x_encoder))
         x = self.norm(x + self.pw_ffn(x))
 
         return x
