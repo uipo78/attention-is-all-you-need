@@ -33,10 +33,11 @@ class _EncoderLayer(nn.Module):
         super().__init__()
         self.multihead = MultiHeadAttention()
         self.pw_ffn = PositionWiseFFN()
-        self.norm = LayerNorm()
+        self.norm_multihead = LayerNorm(dim_hidden=d_model)
+        self.norm = LayerNorm(dim_hidden=d_model)
 
     def forward(self, x):
-        x = self.norm(x + self.multihead(x))
+        x = self.norm_multihead(x + self.multihead(x))
         x = self.norm(x + self.pw_ffn(x))
 
         return x
@@ -50,7 +51,7 @@ class Decoder(nn.Module):
         super().__init__()
         self.embedding = nn.Embedding()
         self.pe = PositionalEncoding()
-        self.stack = nn.ModuleList([_EncoderLayer()] * n_layers)
+        self.stack = nn.ModuleList([_DecoderLayer()] * n_layers)
 
     def forward(self, x):
         x = self.pe(x)
@@ -69,13 +70,13 @@ class _DecoderLayer(nn.Module):
         self.masked_multihead = MultiHeadAttention()
         self.multihead = MultiHeadAttention()
         self.pw_ffn = PositionWiseFFN()
-        self.norm_multihead = LayerNorm(dim_hidden=d_model)
-        self.norm = LayerNorm()
-        self.norm = LayerNorm()
+        self.norm_multihead1 = LayerNorm(dim_hidden=d_model)
+        self.norm_multihead2 = LayerNorm(dim_hidden=d_model)
+        self.norm = LayerNorm(dim_hidden=d_model)
 
     def forward(self, x, x_encoder):
-        x = self.norm_multihead(x + self.masked_multihead(x))
-        x = self.norm_multihead(x + self.multhead(x, x_encoder))
+        x = self.norm_multihead1(x + self.masked_multihead(x))
+        x = self.norm_multihead2(x + self.multhead(x, x_encoder))
         x = self.norm(x + self.pw_ffn(x))
 
         return x
