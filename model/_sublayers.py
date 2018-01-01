@@ -67,35 +67,35 @@ class _ScaledDotProductAttention(nn.Module):
         if self.p is not None:
             x = F.dropout(x, p=p)
 
-        return x.matmul(V)
+        return x.matmul(V), x
 
 
 class PositionWiseFFN(nn.Module):
     """docstring for PositionWiseFFN."""
-    # TODO: figure out dimensions
 
-    def __init__(self):
+    def __init__(self, d_model, d_inner=2048):
         super().__init__()
-        self.fc1 = nn.Sequential(
-            nn.Linear(),
+        self.max = nn.Sequential(
+            nn.Linear(d_model, d_inner),
             nn.ReLU()
         )
-        self.fc2 = nn.Linear()
+        self.linear = nn.Linear(d_inner, d_model)
 
     def forward(self, x):
-        x = self.fc1(x)
-        x = self.fc2(x)
+        x = self.max(x)
+        x = self.linear(x)
 
         return x
 
 
 class LayerNorm(nn.Module):
     """docstring for LayerNorm."""
+    # TODO: idk if this is right at all
 
     def __init__(self, dim_hidden, epsilon=1e-6):
         super().__init__()
-        self.alpha = nn.Parameter(torch.ones(dim_hidden))
-        self.beta = nn.Parameter(torch.zeros(dim_hidden))
+        self.alpha = nn.Parameter(torch.ones(dim_hidden), requires_grad=True)
+        self.beta = nn.Parameter(torch.zeros(dim_hidden), requires_grad=True)
         self.epsilon = epsilon
 
     def forward(self, x):
