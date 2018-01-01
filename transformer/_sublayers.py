@@ -5,6 +5,12 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 
+if torch.cuda.is_available():
+    FloatTensor = torch.cuda.FloatTensor
+else:
+    FloatTensor = torch.FloatTensor
+
+
 class MultiHeadAttention(nn.Module):
     """docstring for MultiHeadAttention."""
 
@@ -76,15 +82,16 @@ class PositionWiseFFN(nn.Module):
 
     def __init__(self, d_model, d_inner=2048):
         super().__init__()
-        self.max = nn.Sequential(
+        self.zeros - FloatTensor(d_model, d_inner).zeros_()
+        self.fc1 = nn.Sequential(
             nn.Linear(d_model, d_inner),
             nn.ReLU()
         )
-        self.linear = nn.Linear(d_inner, d_model)
+        self.fc2 = nn.Linear(d_inner, d_model)
 
     def forward(self, x):
-        x = self.max(x)
-        x = self.linear(x)
+        x = torch.max(input=self.zeros, other=self.fc1(x))
+        x = self.fc2(x)
 
         return x
 
