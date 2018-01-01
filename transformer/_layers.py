@@ -72,8 +72,12 @@ class DecoderLayer(nn.Module):
         self.norm = LayerNorm(dim_hidden=d_model)
 
     def forward(self, x, x_encoded):
-        x = self.norm_multihead1(x + self.masked_multihead(x))
-        x = self.norm_multihead2(x + self.multhead(x, x_encoded))
+        x_masked_multihead, _ = self.masked_multihead(x)
+        x = self.norm_multihead1(x + x_masked_multihead)
+
+        x_multihead, _ = self.multhead(x, x_encoded)
+        x = self.norm_multihead2(x + x_multihead)
+
         x = self.norm(x + self.pw_ffn(x))
 
         return x
