@@ -1,11 +1,11 @@
 import torch.nn as nn
 
 from ._sublayers import (
-    PositionalEncoding,
     MultiHeadAttention,
     PositionWiseFFN,
     LayerNorm
 )
+
 
 class Encoder(nn.Module):
     """docstring for Encoder."""
@@ -13,14 +13,11 @@ class Encoder(nn.Module):
 
     def __init__(self, n_layers=6):
         super().__init__()
-        self.embedding = nn.Embedding()
-        self.pe = PositionalEncoding()
         self.stack = nn.ModuleList([_EncoderLayer()] * n_layers)
 
     def forward(self, x):
-        x = self.pe(x)
         for layer in self.stack:
-            pass
+            x = layer(x)
 
         return x
 
@@ -49,14 +46,11 @@ class Decoder(nn.Module):
 
     def __init__(self, n_layers=6):
         super().__init__()
-        self.embedding = nn.Embedding()
-        self.pe = PositionalEncoding()
         self.stack = nn.ModuleList([_DecoderLayer()] * n_layers)
 
-    def forward(self, x):
-        x = self.pe(x)
+    def forward(self, x, x_encoder):
         for layer in self.stack:
-            pass
+            x = layer(x, x_encoder)
 
         return x
 
