@@ -18,15 +18,20 @@ class Transformer(nn.Module):
             nn.Softmax()
         )
 
-    def forward(self, x, y):
+    def forward(self, x_seq, x_pos, y_seq, y_pos):
+
+        # Input and positional embedding
+        x = self.io_embedding(x_seq) + self.positional_embedding(x_pos)
+
         # Encoder
-        for layer in self.encoder_stack:
-            x = layer(x)
+        for encoder_layer in self.encoder_stack:
+            x = encoder_layer(x)
+
+        # Output and positional embedding
+        y = self.io_embedding(y_seq) + self.positional_embedding(y_pos)
 
         # Decoder
-        for layer in self.decoder_stack:
-            x = layer(y, x_encoder)
+        for decoder_layer in self.decoder_stack:
+            y = decoder_layer(y, x)
 
-        x = self.fc(x)
-
-        return x
+        return self.fc_softmax(y)
