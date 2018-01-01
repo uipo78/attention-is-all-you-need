@@ -7,26 +7,11 @@ from ._sublayers import (
 )
 
 
-class Encoder(nn.Module):
-    """docstring for Encoder."""
+class EncoderLayer(nn.Module):
+    """docstring for EncoderLayer."""
     # TODO: figure out dimensions
 
-    def __init__(self, n_layers=6):
-        super().__init__()
-        self.stack = nn.ModuleList([_EncoderLayer()] * n_layers)
-
-    def forward(self, x):
-        for layer in self.stack:
-            x = layer(x)
-
-        return x
-
-
-class _EncoderLayer(nn.Module):
-    """docstring for _EncoderLayer."""
-    # TODO: figure out dimensions
-
-    def __init__(self):
+    def __init__(self, d_model):
         super().__init__()
         self.multihead = MultiHeadAttention()
         self.pw_ffn = PositionWiseFFN()
@@ -34,32 +19,18 @@ class _EncoderLayer(nn.Module):
         self.norm = LayerNorm(dim_hidden=d_model)
 
     def forward(self, x):
-        x = self.norm_multihead(x + self.multihead(x))
+        x_multihead, _ = self.multihead(x)
+        x = self.norm_multihead(x + x_multihead)
         x = self.norm(x + self.pw_ffn(x))
 
         return x
 
 
-class Decoder(nn.Module):
-    """docstring for Decoder."""
+class DecoderLayer(nn.Module):
+    """docstring for DecoderLayer."""
     # TODO: figure out dimensions
 
-    def __init__(self, n_layers=6):
-        super().__init__()
-        self.stack = nn.ModuleList([_DecoderLayer()] * n_layers)
-
-    def forward(self, x, x_encoder):
-        for layer in self.stack:
-            x = layer(x, x_encoder)
-
-        return x
-
-
-class _DecoderLayer(nn.Module):
-    """docstring for _DecoderLayer."""
-    # TODO: figure out dimensions
-
-    def __init__(self):
+    def __init__(self, d_model):
         super().__init__()
         self.masked_multihead = MultiHeadAttention()
         self.multihead = MultiHeadAttention()
