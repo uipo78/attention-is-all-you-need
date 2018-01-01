@@ -32,8 +32,8 @@ class PositionalEncoding(nn.Module):
 
         return weights
 
-    def forward(self):
-        pass
+    def forward(self, x):
+        return self.embedding(x)
 
 
 class MultiHeadAttention(nn.Module):
