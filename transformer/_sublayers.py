@@ -84,7 +84,7 @@ class PositionWiseFFN(nn.Module):
     def __init__(self, d_model, d_inner):
         super().__init__()
 
-        self.zeros - FloatTensor(d_model, d_inner).zeros_()
+        self.zeros = FloatTensor(d_model, d_inner).zeros_()
         self.fc1 = nn.Sequential(
             nn.Linear(d_model, d_inner),
             nn.ReLU()
