@@ -14,7 +14,7 @@ else:
 class MultiHeadAttention(nn.Module):
     """docstring for MultiHeadAttention."""
 
-    def __init__(self, d_model=512, h=8, p=None, mask=None):
+    def __init__(self, d_model, h, p, mask):
         super().__init__()
 
         # See top of page 5
@@ -49,8 +49,9 @@ class MultiHeadAttention(nn.Module):
 class _ScaledDotProductAttention(nn.Module):
     """docstring for _ScaledDotProductAttention."""
 
-    def __init__(self, p=None, mask=None):
+    def __init__(self, p, mask):
         super().__init__()
+
         self.p = p
         self.mask = mask
 
@@ -80,8 +81,9 @@ class _ScaledDotProductAttention(nn.Module):
 class PositionWiseFFN(nn.Module):
     """docstring for PositionWiseFFN."""
 
-    def __init__(self, d_model, d_inner=2048):
+    def __init__(self, d_model, d_inner):
         super().__init__()
+
         self.zeros - FloatTensor(d_model, d_inner).zeros_()
         self.fc1 = nn.Sequential(
             nn.Linear(d_model, d_inner),
@@ -90,6 +92,7 @@ class PositionWiseFFN(nn.Module):
         self.fc2 = nn.Linear(d_inner, d_model)
 
     def forward(self, x):
+        # Does this need to be wrapped in Variable
         x = torch.max(input=self.zeros, other=self.fc1(x))
         x = self.fc2(x)
 
@@ -100,10 +103,11 @@ class LayerNorm(nn.Module):
     """docstring for LayerNorm."""
     # TODO: idk if this is right at all
 
-    def __init__(self, dim_hidden, epsilon=1e-6):
+    def __init__(self, d_hidden, epsilon):
         super().__init__()
-        self.alpha = nn.Parameter(torch.ones(dim_hidden), requires_grad=True)
-        self.beta = nn.Parameter(torch.zeros(dim_hidden), requires_grad=True)
+
+        self.alpha = nn.Parameter(torch.ones(d_hidden), requires_grad=True)
+        self.beta = nn.Parameter(torch.zeros(d_hidden), requires_grad=True)
         self.epsilon = epsilon
 
     def forward(self, x):
