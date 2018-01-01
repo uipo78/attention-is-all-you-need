@@ -28,7 +28,7 @@ class MultiHeadAttention(nn.Module):
         QW, KW, VW = Q.matmul(self.W_Q), K.matmul(self.W_K), K.matmul(self.W_K)
 
         # h collection in figure 2
-        heads = self.attention(QW, KW, VW)
+        heads, attns = self.attention(QW, KW, VW)
 
         # Concat step in figure 2
         batch_size, h, Q_len, d_v = heads.size()
@@ -37,7 +37,7 @@ class MultiHeadAttention(nn.Module):
         # Linear step in figure 2
         x = concat.bmm(self.W_O)
 
-        return x
+        return x, attns
 
 
 class _ScaledDotProductAttention(nn.Module):
