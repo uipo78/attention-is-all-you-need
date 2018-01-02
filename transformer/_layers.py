@@ -42,7 +42,6 @@ class PositionalEncoding(nn.Module):
 
 class EncoderLayer(nn.Module):
     """docstring for EncoderLayer."""
-    # TODO: figure out dimensions
 
     def __init__(self, d_model, h, p, mask, d_ff, epsilon):
         super().__init__()
@@ -65,7 +64,6 @@ class EncoderLayer(nn.Module):
 
 class DecoderLayer(nn.Module):
     """docstring for DecoderLayer."""
-    # TODO: figure out dimensions
 
     def __init__(self, d_model, h, p, mask, d_ff, epsilon):
         super().__init__()
