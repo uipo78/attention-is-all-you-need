@@ -81,15 +81,15 @@ class _ScaledDotProductAttention(nn.Module):
 class PositionWiseFFN(nn.Module):
     """docstring for PositionWiseFFN."""
 
-    def __init__(self, d_model, d_inner):
+    def __init__(self, d_model, d_ff):
         super().__init__()
 
-        self.zeros = FloatTensor(d_model, d_inner).zeros_()
+        self.zeros = FloatTensor(d_model, d_ff).zeros_()
         self.fc1 = nn.Sequential(
-            nn.Linear(d_model, d_inner),
+            nn.Linear(d_model, d_ff),
             nn.ReLU()
         )
-        self.fc2 = nn.Linear(d_inner, d_model)
+        self.fc2 = nn.Linear(d_ff, d_model)
 
     def forward(self, x):
         # Does this need to be wrapped in Variable

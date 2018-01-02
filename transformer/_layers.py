@@ -44,14 +44,14 @@ class EncoderLayer(nn.Module):
     """docstring for EncoderLayer."""
     # TODO: figure out dimensions
 
-    def __init__(self, d_model, h, p, mask, d_pw_ffn, epsilon):
+    def __init__(self, d_model, h, p, mask, d_ff, epsilon):
         super().__init__()
 
         self.multihead = MultiHeadAttention(d_model=d_model,
                                             h=h,
                                             p=p,
                                             mask=mask)
-        self.pw_ffn = PositionWiseFFN(d_model=d_model, d_inner=d_pw_ffn)
+        self.pw_ffn = PositionWiseFFN(d_model=d_model, d_inner=d_ff)
         self.norm_multihead = LayerNorm(d_hidden=d_model, epsilon=epsilon)
         self.norm = LayerNorm(d_hidden=d_model, epsilon=epsilon)
 
@@ -67,7 +67,7 @@ class DecoderLayer(nn.Module):
     """docstring for DecoderLayer."""
     # TODO: figure out dimensions
 
-    def __init__(self, d_model, h, p, mask, d_pw_ffn, epsilon):
+    def __init__(self, d_model, h, p, mask, d_ff, epsilon):
         super().__init__()
 
         self.masked_multihead = MultiHeadAttention(d_model=d_model,
@@ -78,7 +78,7 @@ class DecoderLayer(nn.Module):
                                             h=h,
                                             p=p,
                                             mask=mask)
-        self.pw_ffn = PositionWiseFFN(d_model=d_model, d_inner=d_pw_ffn)
+        self.pw_ffn = PositionWiseFFN(d_model=d_model, d_inner=d_ff)
         self.norm_multihead1 = LayerNorm(d_hidden=d_model, epsilon=epsilon)
         self.norm_multihead2 = LayerNorm(d_hidden=d_model, epsilon=epsilon)
         self.norm = LayerNorm(d_hidden=d_model, epsilon=epsilon)

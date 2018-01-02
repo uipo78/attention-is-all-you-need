@@ -14,17 +14,17 @@ class Transformer(nn.Module):
                  h,
                  p,
                  mask,
-                 d_pw_ffn_inner,
+                 d_ff,
                  epsilon):
         super().__init__()
 
         self.io_embedding = nn.Embedding(vocab_size, d_model)
         self.positional_embedding = PositionalEncoding(vocab_size, d_model)
         self.encoder_stack = nn.ModuleList(
-            [EncoderLayer(d_model, h, p, mask, d_pw_ffn, epsilon)] * n_layers
+            [EncoderLayer(d_model, h, p, mask, d_ff, epsilon)] * n_layers
         )
         self.decoder_stack = nn.ModuleList(
-            [DecoderLayer(d_model, h, p, mask, d_pw_ffn, epsilon)] * n_layers
+            [DecoderLayer(d_model, h, p, mask, d_ff, epsilon)] * n_layers
         )
         self.fc_softmax = nn.Sequential(
             nn.Linear(),
