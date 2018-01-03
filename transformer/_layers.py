@@ -81,7 +81,7 @@ class DecoderLayer(nn.Module):
                                                       V=x,
                                                       mask=position_mask)
         x = self.norm_masked_multihead1(x + x_masked_multihead)
-        
+
         # To understand the inputs for masked_multihead, look at section 3.2.3
         # of the paper.
         x_multihead, _ = self.multhead(Q=x,
@@ -89,7 +89,7 @@ class DecoderLayer(nn.Module):
                                        V=x_encoded,
                                        mask=pad_mask)
         # TODO: is this residual correct?
-        x = self.norm_multihead(x + x_multihead)
+        x = self.norm_multihead(x + x_encoded + x_multihead)
 
         x = self.norm(x + self.pw_ffn(x))
 
