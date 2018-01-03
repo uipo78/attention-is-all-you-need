@@ -63,7 +63,6 @@ class _ScaledDotProductAttention(nn.Module):
             x.masked_fill_(self.mask, -float("inf"))
 
         # Softmax step in figure 2
-        # TODO: Why is there a * here?
         *dims, d_k = x.size()
         # We need to reshape x so that we can apply softmax across the row of
         # each h-slice of each batch
