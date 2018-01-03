@@ -52,11 +52,7 @@ class EncoderLayer(nn.Module):
         self.norm = LayerNorm(d_hidden=d_model, epsilon=epsilon)
 
     def forward(self, x, mask):
-        x_masked_multihead, _ = self.masked_multihead(Q=x,
-                                                      K=x,
-                                                      V=x,
-                                                      mask=mask)
-        x = self.norm_multihead(x + x_multihead)
+        x = self.norm_multihead(x + self.multihead(Q=x, K=x, V=x, mask=mask))
         x = self.norm(x + self.pw_ffn(x))
 
         return x
@@ -76,18 +72,18 @@ class DecoderLayer(nn.Module):
         self.norm = LayerNorm(d_hidden=d_model, epsilon=epsilon)
 
     def forward(self, x, x_encoded, position_mask, pad_mask):
-        x_masked_multihead, _ = self.masked_multihead(Q=x,
-                                                      K=x,
-                                                      V=x,
-                                                      mask=position_mask)
+        x_masked_multihead = self.masked_multihead(Q=x,
+                                                   K=x,
+                                                   V=x,
+                                                   mask=position_mask)
         x = self.norm_masked_multihead1(x + x_masked_multihead)
 
         # To understand the inputs for masked_multihead, look at section 3.2.3
         # of the paper.
-        x_multihead, _ = self.multhead(Q=x,
-                                       K=x_encoded,
-                                       V=x_encoded,
-                                       mask=pad_mask)
+        x_multihead = self.multhead(Q=x,
+                                    K=x_encoded,
+                                    V=x_encoded,
+                                    mask=pad_mask)
         # TODO: is this residual correct?
         x = self.norm_multihead(x + x_encoded + x_multihead)
 

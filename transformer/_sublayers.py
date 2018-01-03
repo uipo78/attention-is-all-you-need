@@ -6,8 +6,10 @@ from torch.autograd import Variable
 
 
 if torch.cuda.is_available():
+    ByteTensor = torch.cuda.ByteTensor
     FloatTensor = torch.cuda.FloatTensor
 else:
+    ByteTensor = torch.ByteTensor
     FloatTensor = torch.FloatTensor
 
 
@@ -34,7 +36,7 @@ class MultiHeadAttention(nn.Module):
         QW, KW, VW = Q.matmul(self.W_Q), K.matmul(self.W_K), K.matmul(self.W_K)
 
         # h collection in figure 2
-        heads, attns = self.scaled_dot_attention(QW, KW, VW, mask)
+        heads = self.scaled_dot_attention(QW, KW, VW, mask)
 
         # Concat step in figure 2
         batch_size, h, Q_len, d_v = heads.size()
@@ -43,7 +45,7 @@ class MultiHeadAttention(nn.Module):
         # Linear step in figure 2
         x = concat.bmm(self.W_O)
 
-        return x, attns
+        return x
 
 
 class _ScaledDotProductAttention(nn.Module):
@@ -60,7 +62,7 @@ class _ScaledDotProductAttention(nn.Module):
 
         # Optional masking layer
         if self.mask is not None:
-            x.masked_fill_(self.mask, -float("inf"))
+            x.masked_fill_(self.mask.type(ByteTensor), -float("inf"))
 
         # Softmax step in figure 2
         *dims, d_k = x.size()
@@ -73,7 +75,7 @@ class _ScaledDotProductAttention(nn.Module):
         if self.p is not None:
             x = F.dropout(x, p=p)
 
-        return x.matmul(V), x
+        return x.matmul(V)
 
 
 class PositionWiseFFN(nn.Module):
