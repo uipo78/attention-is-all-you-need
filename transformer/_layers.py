@@ -43,19 +43,19 @@ class PositionalEncoding(nn.Module):
 class EncoderLayer(nn.Module):
     """docstring for EncoderLayer."""
 
-    def __init__(self, d_model, h, p, mask, d_ff, epsilon):
+    def __init__(self, d_model, h, p, d_ff, epsilon):
         super().__init__()
 
-        self.multihead = MultiHeadAttention(d_model=d_model,
-                                            h=h,
-                                            p=p,
-                                            mask=mask)
+        self.multihead = MultiHeadAttention(d_model=d_model, h=h, p=p)
         self.pw_ffn = PositionWiseFFN(d_model=d_model, d_inner=d_ff)
         self.norm_multihead = LayerNorm(d_hidden=d_model, epsilon=epsilon)
         self.norm = LayerNorm(d_hidden=d_model, epsilon=epsilon)
 
-    def forward(self, x):
-        x_multihead, _ = self.multihead(x)
+    def forward(self, x, mask):
+        x_masked_multihead, _ = self.masked_multihead(Q=x,
+                                                      K=x,
+                                                      V=x,
+                                                      mask=mask)
         x = self.norm_multihead(x + x_multihead)
         x = self.norm(x + self.pw_ffn(x))
 
@@ -68,24 +68,26 @@ class DecoderLayer(nn.Module):
     def __init__(self, d_model, h, p, mask, d_ff, epsilon):
         super().__init__()
 
-        self.masked_multihead = MultiHeadAttention(d_model=d_model,
-                                                   h=h,
-                                                   p=p,
-                                                   mask=mask)
-        self.multihead = MultiHeadAttention(d_model=d_model,
-                                            h=h,
-                                            p=p,
-                                            mask=mask)
+        self.masked_multihead = MultiHeadAttention(d_model=d_model, h=h, p=p)
+        self.multihead = MultiHeadAttention(d_model=d_model, h=h, p=p)
         self.pw_ffn = PositionWiseFFN(d_model=d_model, d_inner=d_ff)
         self.norm_multihead1 = LayerNorm(d_hidden=d_model, epsilon=epsilon)
         self.norm_multihead2 = LayerNorm(d_hidden=d_model, epsilon=epsilon)
         self.norm = LayerNorm(d_hidden=d_model, epsilon=epsilon)
 
-    def forward(self, x, x_encoded):
-        x_masked_multihead, _ = self.masked_multihead(x)
+    def forward(self, x, x_encoded, position_mask, pad_mask):
+        x_masked_multihead, _ = self.masked_multihead(Q=x,
+                                                      K=x,
+                                                      V=x,
+                                                      mask=position_mask)
         x = self.norm_multihead1(x + x_masked_multihead)
-
-        x_multihead, _ = self.multhead(x, x_encoded)
+        # To understand the inputs for masked_multihead, look at section 3.2.3
+        # of the paper.
+        x_multihead, _ = self.multhead(Q=x,
+                                       K=x_encoded,
+                                       V=x_encoded,
+                                       mask=pad_mask)
+        # TODO: is this residual correct?
         x = self.norm_multihead2(x + x_multihead)
 
         x = self.norm(x + self.pw_ffn(x))

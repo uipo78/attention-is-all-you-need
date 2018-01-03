@@ -14,7 +14,7 @@ else:
 class MultiHeadAttention(nn.Module):
     """docstring for MultiHeadAttention."""
 
-    def __init__(self, d_model, h, p, mask):
+    def __init__(self, d_model, h, p):
         super().__init__()
 
         # See top of page 5
@@ -27,14 +27,14 @@ class MultiHeadAttention(nn.Module):
         self.W_V = nn.Parameters(Variable(FloatTensor(h, d_model, d_v)))
         self.W_O = nn.Parameters(Variable(FloatTensor(h * d_v, d_model)))
 
-        self.attention = _ScaledDotProductAttention(p, mask)
+        self.scaled_dot_attention = _ScaledDotProductAttention(p)
 
-    def forward(self, Q, K, V):
+    def forward(self, Q, K, V, mask):
         # Q, K, and V are of dimension (length {Q, K, V}, d_model)
         QW, KW, VW = Q.matmul(self.W_Q), K.matmul(self.W_K), K.matmul(self.W_K)
 
         # h collection in figure 2
-        heads, attns = self.attention(QW, KW, VW)
+        heads, attns = self.scaled_dot_attention(QW, KW, VW, mask)
 
         # Concat step in figure 2
         batch_size, h, Q_len, d_v = heads.size()
@@ -49,19 +49,18 @@ class MultiHeadAttention(nn.Module):
 class _ScaledDotProductAttention(nn.Module):
     """docstring for _ScaledDotProductAttention."""
 
-    def __init__(self, p, mask):
+    def __init__(self, p):
         super().__init__()
 
         self.p = p
-        self.mask = mask
 
-    def forward(self, Q, K, V):
+    def forward(self, Q, K, V, mask):
         # MatMul and Scale steps in figure 2
         x = Q.matmul(K.transpose(-2, -1)) / K.size(-1) ** 0.5
 
         # Optional masking layer
         if self.mask is not None:
-            pass
+            x.masked_fill_(self.mask, -float("inf"))
 
         # Softmax step in figure 2
         # TODO: Why is there a * here?

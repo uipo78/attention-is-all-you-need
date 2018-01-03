@@ -18,6 +18,8 @@ class Transformer(nn.Module):
                  epsilon):
         super().__init__()
 
+        self.mask = mask
+
         if in_vocab_size == out_vocab_size:
             self._shared_weights = True
             self.io_embedding = nn.Embedding(input_vocab_size, d_model)
@@ -29,10 +31,10 @@ class Transformer(nn.Module):
             self.out_embedding = nn.Embedding(out_vocab_size, d_model)
             self.out_pos_embedding = PositionalEncoding(out_vocab_size, d_model)
         self.encoder_stack = nn.ModuleList(
-            [EncoderLayer(d_model, h, p, mask, d_ff, epsilon)] * n_layers
+            [EncoderLayer(d_model, h, p, d_ff, epsilon)] * n_layers
         )
         self.decoder_stack = nn.ModuleList(
-            [DecoderLayer(d_model, h, p, mask, d_ff, epsilon)] * n_layers
+            [DecoderLayer(d_model, h, p, d_ff, epsilon)] * n_layers
         )
         self.fc_softmax = nn.Sequential(
             nn.Linear(d_model, out_vocab_size),
@@ -48,8 +50,9 @@ class Transformer(nn.Module):
             x = self.in_embedding(x_seq) + self.in_pos_embedding(x_pos)
 
         # Encoder
+        mask = self._make_padding_mask(x_seq, x_seq)
         for encoder_layer in self.encoder_stack:
-            x = encoder_layer(x)
+            x = encoder_layer(x, mask)
 
         # Output and positional embedding
         if self._shared_weights:
@@ -58,7 +61,28 @@ class Transformer(nn.Module):
             y = self.out_embedding(y_seq) + self.out_pos_embedding(y_pos)
 
         # Decoder
+        masks = self._make_decoder_masks(x_seq, y_seq)
         for decoder_layer in self.decoder_stack:
-            y = decoder_layer(y, x)
+            y = decoder_layer(y, x, *masks)
 
         return self.fc_softmax(y)
+
+    @classmethod
+    def _make_decoder_masks(cls, x_seq, y_seq):
+        pad_mask = cls._make_pad_mask(y_seq, y_seq)
+        subseq_mask = cls._make_subsequent_mask(y_seq)
+        position_mask = (pad_mask + subseq_mask).gt(0).type_as(x_seq)
+        pad_mask = cls._make_padding_mask(x_seq, y_seq)
+
+        return position_mask, pad_mask
+
+    @staticmethod
+    def _make_pad_mask(seq_a, seq_b):
+        return seq_a.eq(0).unsqueeze(1).expand(*seq_a.size(), seq_b.size(1))
+
+    @staticmethod
+    def _make_subseq_mask(seq):
+        upper_tri_ones = torch.ones(seq.size(1), seq.size(1)).triu_(diagonal=1)
+        mask = upper_tri_ones.unsqueeze_(0).repeat(seq.size(0), 1, 1)
+
+        return mask
