@@ -13,12 +13,9 @@ class Transformer(nn.Module):
                  d_model,
                  h,
                  p,
-                 mask,
                  d_ff,
                  epsilon):
         super().__init__()
-
-        self.mask = mask
 
         if in_vocab_size == out_vocab_size:
             self._shared_weights = True
