@@ -103,7 +103,7 @@ class LayerNorm(nn.Module):
     """docstring for LayerNorm."""
     # TODO: idk if this is right at all
 
-    def __init__(self, d_hidden, epsilon):
+    def __init__(self, d_hidden, epsilon=1e-6):
         super().__init__()
 
         self.alpha = nn.Parameter(torch.ones(d_hidden), requires_grad=True)
