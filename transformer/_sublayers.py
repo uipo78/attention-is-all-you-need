@@ -62,6 +62,7 @@ class _ScaledDotProductAttention(nn.Module):
 
         # Optional masking layer
         if self.mask is not None:
+            # BELOW IS A BUG https://github.com/pytorch/pytorch/issues/3397
             x.masked_fill_(self.mask.type(ByteTensor), -float("inf"))
 
         # Softmax step in figure 2
