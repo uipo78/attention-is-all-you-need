@@ -105,13 +105,19 @@ class LayerNorm(nn.Module):
 
     def __init__(self, d_hidden, epsilon=1e-6):
         super().__init__()
-
-        self.alpha = nn.Parameter(torch.ones(d_hidden), requires_grad=True)
-        self.beta = nn.Parameter(torch.zeros(d_hidden), requires_grad=True)
+        
         self.epsilon = epsilon
+        self.weight = nn.Parameter(torch.ones(d_hidden), requires_grad=True)
+        self.bias = nn.Parameter(torch.zeros(d_hidden), requires_grad=True)
 
     def forward(self, x):
-        mean = x.mean(-1, keepdim=True)
-        std = x.std(-1, keepdim=True)
-
-        return self.alpha * (x - mean) / (std + self.epsilon) + self.beta
+        b, t, _ = x.size()
+        
+        mean = x.mean(2).view(b, t, 1).expand_as(x)
+        std = (x - mean).pow(2).mean(2).sqrt().view(b, t, 1).expand_as(x)
+        norm = (x - mean) / (std + self.epsilon)
+        
+        weight = self.weight.view(1, 1, -1).expand_as(output)
+        bias = self.bias.view(1, 1, -1).expand_as(output)
+        
+        return norm * weight + bias
