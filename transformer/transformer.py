@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 from ._layers import PositionalEncoding, EncoderLayer, DecoderLayer
@@ -19,8 +20,8 @@ class Transformer(nn.Module):
 
         if in_vocab_size == out_vocab_size:
             self._shared_weights = True
-            self.io_embedding = nn.Embedding(input_vocab_size, d_model)
-            self.pos_embedding = PositionalEncoding(input_vocab_size, d_model)
+            self.io_embedding = nn.Embedding(in_vocab_size, d_model)
+            self.pos_embedding = PositionalEncoding(in_vocab_size, d_model)
         else:
             self._shared_weights = False
             self.in_embedding = nn.Embedding(in_vocab_size, d_model)
