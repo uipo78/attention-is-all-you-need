@@ -61,7 +61,7 @@ class EncoderLayer(nn.Module):
 class DecoderLayer(nn.Module):
     """docstring for DecoderLayer."""
 
-    def __init__(self, d_model, h, p, mask, d_ff, epsilon):
+    def __init__(self, d_model, h, p, d_ff, epsilon):
         super().__init__()
 
         self.masked_multihead = MultiHeadAttention(d_model=d_model, h=h, p=p)
