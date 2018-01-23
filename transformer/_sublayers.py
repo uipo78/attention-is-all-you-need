@@ -51,10 +51,10 @@ class MultiHeadAttention(nn.Module):
 class _ScaledDotProductAttention(nn.Module):
     """docstring for _ScaledDotProductAttention."""
 
-    def __init__(self, p):
+    def __init__(self, dropout):
         super().__init__()
 
-        self.p = p
+        self.dropout = dropout
 
     def forward(self, Q, K, V, mask):
         # MatMul and Scale steps in figure 2
@@ -73,7 +73,7 @@ class _ScaledDotProductAttention(nn.Module):
 
         # Optional dropout regularization
         if self.p is not None:
-            x = F.dropout(x, p=p)
+            x = F.dropout(x, p=self.dropout)
 
         return x.matmul(V)
 
