@@ -47,7 +47,7 @@ class EncoderLayer(nn.Module):
         super().__init__()
 
         self.multihead = MultiHeadAttention(d_model=d_model, h=h, p=p)
-        self.pw_ffn = PositionWiseFFN(d_model=d_model, d_inner=d_ff)
+        self.pw_ffn = PositionWiseFFN(d_model=d_model, d_ff=d_ff)
         self.norm_multihead = LayerNorm(d_hidden=d_model, epsilon=epsilon)
         self.norm = LayerNorm(d_hidden=d_model, epsilon=epsilon)
 
@@ -66,7 +66,7 @@ class DecoderLayer(nn.Module):
 
         self.masked_multihead = MultiHeadAttention(d_model=d_model, h=h, p=p)
         self.multihead = MultiHeadAttention(d_model=d_model, h=h, p=p)
-        self.pw_ffn = PositionWiseFFN(d_model=d_model, d_inner=d_ff)
+        self.pw_ffn = PositionWiseFFN(d_model=d_model, d_ff=d_ff)
         self.norm_masked_multihead = LayerNorm(d_hidden=d_model, epsilon=epsilon)
         self.norm_multihead = LayerNorm(d_hidden=d_model, epsilon=epsilon)
         self.norm = LayerNorm(d_hidden=d_model, epsilon=epsilon)
