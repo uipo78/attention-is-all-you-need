@@ -48,12 +48,13 @@ class EncoderLayer(nn.Module):
 
         self.multihead = MultiHeadAttention(d_model=d_model, h=h, p=p)
         self.pw_ffn = PositionWiseFFN(d_model=d_model, d_ff=d_ff)
-        self.norm_multihead = LayerNorm(d_hidden=d_model, epsilon=epsilon)
-        self.norm = LayerNorm(d_hidden=d_model, epsilon=epsilon)
+        self.norms = nn.ModuleList([
+            LayerNorm(d_hidden=d_model, epsilon=epsilon) for _ in range(3)
+        ])
 
     def forward(self, x, mask):
-        x = self.norm_multihead(x + self.multihead(Q=x, K=x, V=x, mask=mask))
-        x = self.norm(x + self.pw_ffn(x))
+        x = self.norms[0](x + self.multihead(Q=x, K=x, V=x, mask=mask))
+        x = self.norms[1](x + self.pw_ffn(x))
 
         return x
 
@@ -64,29 +65,22 @@ class DecoderLayer(nn.Module):
     def __init__(self, d_model, h, p, d_ff, epsilon):
         super().__init__()
 
-        self.masked_multihead = MultiHeadAttention(d_model=d_model, h=h, p=p)
-        self.multihead = MultiHeadAttention(d_model=d_model, h=h, p=p)
         self.pw_ffn = PositionWiseFFN(d_model=d_model, d_ff=d_ff)
-        self.norm_masked_multihead = LayerNorm(d_hidden=d_model, epsilon=epsilon)
-        self.norm_multihead = LayerNorm(d_hidden=d_model, epsilon=epsilon)
-        self.norm = LayerNorm(d_hidden=d_model, epsilon=epsilon)
+        self.multiheads = nn.ModuleList([
+            MultiHeadAttention(d_model=d_model, h=h, p=p) for _ in range(2)
+        ])
+        self.norms = nn.ModuleList([
+            LayerNorm(d_hidden=d_model, epsilon=epsilon) for _ in range(3)
+        ])
 
-    def forward(self, x, x_encoded, position_mask, pad_mask):
-        x_masked_multihead = self.masked_multihead(Q=x,
-                                                   K=x,
-                                                   V=x,
-                                                   mask=position_mask)
-        x = self.norm_masked_multihead1(x + x_masked_multihead)
+    def forward(self, x, enc, pos_mask, pad_mask):
+        x = self.norms[0](x + self.multiheads[0](Q=x, K=x, V=x, mask=pos_mask))
 
         # To understand the inputs for masked_multihead, look at section 3.2.3
         # of the paper.
-        x_multihead = self.multhead(Q=x,
-                                    K=x_encoded,
-                                    V=x_encoded,
-                                    mask=pad_mask)
         # TODO: is this residual correct?
-        x = self.norm_multihead(x + x_encoded + x_multihead)
+        x = self.norms[1](x + self.multiheads[1](Q=x, K=enc, V=enc, mask=pad_mask))
 
-        x = self.norm(x + self.pw_ffn(x))
+        x = self.norms[2](x + self.pw_ffn(x))
 
         return x
