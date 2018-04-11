@@ -9,6 +9,8 @@ class MultiHeadAttention(nn.Module):
     def __init__(self, d_model, h, dropout):
         super().__init__()
 
+        assert d_model % h == 0
+
         self.Q_lins = nn.ModuleList()
         self.K_lins = nn.ModuleList()
         self.V_lins = nn.ModuleList()
