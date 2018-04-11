@@ -82,22 +82,18 @@ class _ScaledDotProductAttention(nn.Module):
 class PositionWiseFFN(nn.Module):
     """docstring for PositionWiseFFN."""
 
-    def __init__(self, d_model, d_ff):
+    def __init__(self, d_model, d_ff, dropout):
         super().__init__()
 
-        self.zeros = FloatTensor(d_model, d_ff).zeros_()
-        self.fc1 = nn.Sequential(
+        self.module = nn.Sequential(
             nn.Linear(d_model, d_ff),
-            nn.ReLU()
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(d_ff, d_model)
         )
-        self.fc2 = nn.Linear(d_ff, d_model)
 
     def forward(self, x):
-        # Does this need to be wrapped in Variable
-        x = torch.max(input=self.zeros, other=self.fc1(x))
-        x = self.fc2(x)
-
-        return x
+        return self.module(x)
 
 
 class LayerNorm(nn.Module):
