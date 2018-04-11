@@ -3,45 +3,36 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-if torch.cuda.is_available():
-    ByteTensor = torch.cuda.ByteTensor
-    FloatTensor = torch.cuda.FloatTensor
-else:
-    ByteTensor = torch.ByteTensor
-    FloatTensor = torch.FloatTensor
-
-
 class MultiHeadAttention(nn.Module):
     """docstring for MultiHeadAttention."""
 
     def __init__(self, d_model, h, dropout):
         super().__init__()
 
-        # See top of page 5
-        d_k = d_v = d_model // h
+        self.Q_lins = nn.ModuleList()
+        self.K_lins = nn.ModuleList()
+        self.V_lins = nn.ModuleList()
+        for _ in range(h):
+            # See top of page 5 for reason for d_model // h
+            self.Q_lins.append(nn.Linear(d_model, d_model // h))
+            self.K_lins.append(nn.Linear(d_model, d_model // h))
+            self.V_lins.append(nn.Linear(d_model, d_model // h))
 
-        # Rather than constructing a set of W matrices for Q, K, and V,
-        # we instead stack all such matrices, resulting in an order 3 tensor.
-        self.W_Q = nn.Parameters(FloatTensor(h, d_model, d_k))
-        self.W_K = nn.Parameters(FloatTensor(h, d_model, d_k))
-        self.W_V = nn.Parameters(FloatTensor(h, d_model, d_v))
-        self.W_O = nn.Parameters(FloatTensor(h * d_v, d_model))
+        self.out = nn.Linear(d_model, d_model)
 
         self.dropout = dropout
 
     def forward(self, Q, K, V, mask=None):
-        # Q, K, and V are of dimension (length {Q, K, V}, d_model)
-        QW, KW, VW = Q.matmul(self.W_Q), K.matmul(self.W_K), K.matmul(self.W_K)
+        heads = []
+        for Q_lin, K_lin, V_lin in zip(self.Q_lins, self.K_lins, self.V_lins):
+            heads.append(self._scaled_dot_product_attn(Q_lin(Q),
+                                                       K_lin(K),
+                                                       V_lin(V),
+                                                       mask,
+                                                       self.dropout))
 
-        # h collection in figure 2
-        heads = self._scaled_dot_product_attn(QW, KW, VW, mask, self.dropout)
-
-        # Concat step in figure 2
-        batch_size, h, Q_len, d_v = heads.size()
-        concat = heads.view(batch_size, Q_len, h * d_v)
-
-        # Linear step in figure 2
-        x = concat.bmm(self.W_O)
+        x = torch.cat(heads, dim=1)
+        x = self.out(x)
 
         return x
 
@@ -53,20 +44,15 @@ class MultiHeadAttention(nn.Module):
         # Optional masking layer
         if mask is not None:
             # BELOW IS A BUG https://github.com/pytorch/pytorch/issues/3397
-            x.masked_fill_(mask.type(ByteTensor), -float("inf"))
+            x.masked_fill_(mask, -float("inf"))
 
-        # Softmax step in figure 2
-        *dims, d_k = x.size()
-        # We need to reshape x so that we can apply softmax across the row of
-        # each h-slice of each batch
-        x = F.softmax(x.view(-1, d_k))
-        x = x.view(*dims, d_k)
+        softmax = F.softmax(x)
 
         # Optional dropout regularization
         if dropout is not None:
-            x = F.dropout(x, p=dropout)
+            softmax = F.dropout(softmax, p=dropout)
 
-        return x.matmul(V)
+        return softmax.matmul(V)
 
 
 class PositionWiseFFN(nn.Module):
