@@ -2,8 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from torch.autograd import Variable
-
 
 if torch.cuda.is_available():
     ByteTensor = torch.cuda.ByteTensor
@@ -11,8 +9,6 @@ if torch.cuda.is_available():
 else:
     ByteTensor = torch.ByteTensor
     FloatTensor = torch.FloatTensor
-
-
 
 
 class MultiHeadAttention(nn.Module):
@@ -26,10 +22,10 @@ class MultiHeadAttention(nn.Module):
 
         # Rather than constructing a set of W matrices for Q, K, and V,
         # we instead stack all such matrices, resulting in an order 3 tensor.
-        self.W_Q = nn.Parameters(Variable(FloatTensor(h, d_model, d_k)))
-        self.W_K = nn.Parameters(Variable(FloatTensor(h, d_model, d_k)))
-        self.W_V = nn.Parameters(Variable(FloatTensor(h, d_model, d_v)))
-        self.W_O = nn.Parameters(Variable(FloatTensor(h * d_v, d_model)))
+        self.W_Q = nn.Parameters(FloatTensor(h, d_model, d_k))
+        self.W_K = nn.Parameters(FloatTensor(h, d_model, d_k))
+        self.W_V = nn.Parameters(FloatTensor(h, d_model, d_v))
+        self.W_O = nn.Parameters(FloatTensor(h * d_v, d_model))
 
         self.dropout = dropout
 
