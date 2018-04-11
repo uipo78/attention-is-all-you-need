@@ -65,6 +65,10 @@ class Transformer(nn.Module):
 
         return self.out(y)
 
+    @staticmethod
+    def _make_pad_mask(seq_a, seq_b):
+        return seq_a.eq(0).unsqueeze(1).expand(*seq_a.size(), seq_b.size(1))
+
     @classmethod
     def _make_decoder_masks(cls, x_seq, y_seq):
         pad_mask = cls._make_pad_mask(y_seq, y_seq)
@@ -73,10 +77,6 @@ class Transformer(nn.Module):
         pad_mask = cls._make_padding_mask(x_seq, y_seq)
 
         return position_mask, pad_mask
-
-    @staticmethod
-    def _make_pad_mask(seq_a, seq_b):
-        return seq_a.eq(0).unsqueeze(1).expand(*seq_a.size(), seq_b.size(1))
 
     @staticmethod
     def _make_subseq_mask(seq):
