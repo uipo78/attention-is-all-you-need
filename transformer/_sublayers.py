@@ -13,10 +13,12 @@ else:
     FloatTensor = torch.FloatTensor
 
 
+
+
 class MultiHeadAttention(nn.Module):
     """docstring for MultiHeadAttention."""
 
-    def __init__(self, d_model, h, p):
+    def __init__(self, d_model, h, dropout):
         super().__init__()
 
         # See top of page 5
@@ -29,14 +31,14 @@ class MultiHeadAttention(nn.Module):
         self.W_V = nn.Parameters(Variable(FloatTensor(h, d_model, d_v)))
         self.W_O = nn.Parameters(Variable(FloatTensor(h * d_v, d_model)))
 
-        self.scaled_dot_attention = _ScaledDotProductAttention(p)
+        self.dropout = dropout
 
-    def forward(self, Q, K, V, mask):
+    def forward(self, Q, K, V, mask=None):
         # Q, K, and V are of dimension (length {Q, K, V}, d_model)
         QW, KW, VW = Q.matmul(self.W_Q), K.matmul(self.W_K), K.matmul(self.W_K)
 
         # h collection in figure 2
-        heads = self.scaled_dot_attention(QW, KW, VW, mask)
+        heads = self._scaled_dot_product_attn(QW, KW, VW, mask, self.dropout)
 
         # Concat step in figure 2
         batch_size, h, Q_len, d_v = heads.size()
@@ -47,23 +49,15 @@ class MultiHeadAttention(nn.Module):
 
         return x
 
-
-class _ScaledDotProductAttention(nn.Module):
-    """docstring for _ScaledDotProductAttention."""
-
-    def __init__(self, dropout):
-        super().__init__()
-
-        self.dropout = dropout
-
-    def forward(self, Q, K, V, mask):
+    @staticmethod
+    def _scaled_dot_product_attn(Q, K, V, mask=None, dropout=None):
         # MatMul and Scale steps in figure 2
-        x = Q.matmul(K.transpose(-2, -1)) / K.size(-1) ** 0.5
+        x = Q.matmul(K.transpose(-2, -1)) / K.size(-1)**0.5
 
         # Optional masking layer
-        if self.mask is not None:
+        if mask is not None:
             # BELOW IS A BUG https://github.com/pytorch/pytorch/issues/3397
-            x.masked_fill_(self.mask.type(ByteTensor), -float("inf"))
+            x.masked_fill_(mask.type(ByteTensor), -float("inf"))
 
         # Softmax step in figure 2
         *dims, d_k = x.size()
@@ -73,8 +67,8 @@ class _ScaledDotProductAttention(nn.Module):
         x = x.view(*dims, d_k)
 
         # Optional dropout regularization
-        if self.p is not None:
-            x = F.dropout(x, p=self.dropout)
+        if dropout is not None:
+            x = F.dropout(x, p=dropout)
 
         return x.matmul(V)
 
