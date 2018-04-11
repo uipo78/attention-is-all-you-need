@@ -65,7 +65,7 @@ class DecoderLayer(nn.Module):
     def __init__(self, d_model, h, p, d_ff, epsilon, dropout):
         super().__init__()
 
-        self.multiheads = nn.ModuleList([
+        self.attns = nn.ModuleList([
             MultiHeadAttention(d_model=d_model, h=h, p=p) for _ in range(2)
         ])
         self.norms = nn.ModuleList([
@@ -73,13 +73,12 @@ class DecoderLayer(nn.Module):
         ])
         self.pw_ffn = PositionWiseFFN(d_model, d_ff, dropout)
 
-    def forward(self, x, enc, pos_mask, pad_mask):
-        x = self.norms[0](x + self.multiheads[0](Q=x, K=x, V=x, mask=pos_mask))
+    def forward(self, x, enc, src_mask, target_mask):
+        x = self.norms[0](x + self.attns[0](Q=x, K=x, V=x, mask=target_mask))
 
         # To understand the inputs for masked_multihead, look at section 3.2.3
         # of the paper.
-        # TODO: is this residual correct?
-        x = self.norms[1](x + self.multiheads[1](Q=x, K=enc, V=enc, mask=pad_mask))
+        x = self.norms[1](x + self.attns[1](Q=x, K=enc, V=enc, mask=src_mask))
 
         x = self.norms[2](x + self.pw_ffn(x))
 
