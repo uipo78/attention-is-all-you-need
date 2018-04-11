@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from torch.autograd import Variable
+
 from ._sublayers import (
     MultiHeadAttention,
     PositionWiseFFN,
@@ -8,36 +10,26 @@ from ._sublayers import (
 )
 
 
-if torch.cuda.is_available():
-    FloatTensor = torch.cuda.FloatTensor
-else:
-    FloatTensor = torch.FloatTensor
-
-
 class PositionalEncoding(nn.Module):
     """docstring for PositionalEncoding."""
 
-    def __init__(self, vocab_size, d_model):
+    def __init__(self, max_seq_len, d_model):
         super().__init__()
 
-        self.embedding = nn.Embedding(vocab_size, d_model)
-        self.embedding.weight.data = self._init_weights(vocab_size, d_model)
+        pe = torch.zeros(max_seq_len, d_model)
+        position = torch.arange(0, max_seq_len).unsqueeze(1)
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2) * -(torch.log(10000) / d_model)
+        )
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe.unsqueeze(0)
 
-    @staticmethod
-    def _init_weights(vocab_size, d_model):
-        weights = FloatTensor(vocab_size, d_model).zeros_()
-        for pos in range(1, vocab_size):
-            for i in range(d_model):
-                inner = FloatTensor([pos / (int(10e3)**(2 * i / d_model))])
-                if i % 2 == 0:
-                    weights[pos, i] = torch.sin(inner)
-                else:
-                    weights[pos, i] = torch.cos(inner)
-
-        return weights
+        # Positional encoding is NOT a learned embedding.
+        self.register_bugger("pe", pe)
 
     def forward(self, x):
-        return self.embedding(x)
+        return x + Variable(self.pe[:, :x.size(1)], requires_grad=False)
 
 
 class EncoderLayer(nn.Module):
