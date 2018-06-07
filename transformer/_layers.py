@@ -26,7 +26,7 @@ class PositionalEncoding(nn.Module):
         pe.unsqueeze(0)
 
         # Positional encoding is NOT a learned embedding.
-        self.register_bugger("pe", pe)
+        self.register_buffer("pe", pe)
 
     def forward(self, x):
         return x + Variable(self.pe[:, :x.size(1)], requires_grad=False)
