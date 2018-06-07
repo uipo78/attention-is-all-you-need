@@ -20,14 +20,14 @@ class Transformer(nn.Module):
 
         if in_vocab_size == out_vocab_size:
             self._shared_weights = True
-            self.token_embedding = nn.Embedding(in_vocab_size, d_model)
-            self.pos_embedding = PositionalEncoding(in_vocab_size, d_model)
+            self.embedding = nn.Embedding(in_vocab_size, d_model)
+            self.position = PositionalEncoding(in_vocab_size, d_model)
         else:
             self._shared_weights = False
-            self.in_token_embedding = nn.Embedding(in_vocab_size, d_model)
-            self.in_pos_embedding = PositionalEncoding(in_vocab_size, d_model)
-            self.out_token_embedding = nn.Embedding(out_vocab_size, d_model)
-            self.out_pos_embedding = PositionalEncoding(out_vocab_size, d_model)
+            self.in_embedding = nn.Embedding(in_vocab_size, d_model)
+            self.in_position = PositionalEncoding(in_vocab_size, d_model)
+            self.out_embedding = nn.Embedding(out_vocab_size, d_model)
+            self.out_position = PositionalEncoding(out_vocab_size, d_model)
         self.encoder_stack = nn.ModuleList(
             [EncoderLayer(d_model, h, p, d_ff, epsilon)] * n_layers
         )
@@ -43,9 +43,9 @@ class Transformer(nn.Module):
 
         # Input and positional embedding
         if self._shared_weights:
-            x = self.token_embedding(x_seq) + self.pos_embedding(x_pos)
+            x = self.embedding(x_seq) + self.position(x_pos)
         else:
-            x = self.in_token_embedding(x_seq) + self.in_pos_embedding(x_pos)
+            x = self.in_embedding(x_seq) + self.in_position(x_pos)
 
         # Encoder
         mask = self._make_padding_mask(x_seq, x_seq)
@@ -54,9 +54,9 @@ class Transformer(nn.Module):
 
         # Output and positional embedding
         if self._shared_weights:
-            y = self.token_embedding(y_seq) + self.pos_embedding(y_pos)
+            y = self.embedding(y_seq) + self.position(y_pos)
         else:
-            y = self.out_token_embedding(y_seq) + self.out_pos_embedding(y_pos)
+            y = self.out_embedding(y_seq) + self.out_position(y_pos)
 
         # Decoder
         masks = self._make_decoder_masks(x_seq, y_seq)
